@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV File Generator</title>
+    <link rel="icon" type="image/png" href="Lotus_bg8-removebg-preview.jpg">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .input-area { border: 2px solid #007bff; padding: 40px; text-align: center; margin: 20px 0; border-radius: 8px; background: #f8f9ff; }
+        .input-group { margin: 15px 0; }
+        input[type="number"] { padding: 12px; font-size: 18px; border: 2px solid #ddd; border-radius: 4px; width: 200px; text-align: center; }
+        .checkbox-group { margin: 20px 0; display: flex; justify-content: center; align-items: center; gap: 20px; }
+        .checkbox-item { display: flex; align-items: center; }
+        input[type="checkbox"] { transform: scale(1.5); margin-right: 10px; }
+        label { font-size: 16px; font-weight: bold; }
+        button { background: #007bff; color: white; padding: 15px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 18px; margin-top: 15px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 4px; display: none; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .mode-explanation { font-size: 14px; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>
+        <img src="Lotus_bg8-remov.jpg" alt="Logo" style="height: 53px; vertical-align: middle; margin-right: 13px;"> CSV File Generator
+    </h1>
+
+    <div class="input-area">
+        <form id="generateForm">
+            <!-- Input 1: Number of files -->
+            <div class="input-group">
+                <p><strong>How many CSV files do you want to generate?</strong></p>
+                <input type="number" id="countInput" name="count" min="1" max="1000" value="10" required>
+            </div>
+
+            <!-- Input 2: Checkboxes side by side -->
+            <div class="checkbox-group">
+                <div class="checkbox-item">
+                    <label>
+                        <input type="checkbox" id="sameFileModeCheckbox" name="sameFileMode">
+                        Same file mode (Multiple rows per file)
+                    </label>
+                </div>
+                <div class="checkbox-item">
+                    <label>
+                        <input type="checkbox" id="sixMbCheckbox" name="sixMb">
+                        6MB
+                    </label>
+                </div>
+            </div>
+
+            <div class="mode-explanation" id="modeText">
+                Normal mode: Each file will contain 1 row
+            </div>
+
+            <button type="submit">Generate CSV Files</button>
+        </form>
+    </div>
+
+    <div class="info result" style="display: block;">
+        <h4>How it works:</h4>
+        <ul>
+            <li><strong>Position 8:</strong> Starts from 2000, increments +1 for each row</li>
+            <li><strong>Date (Position 9):</strong> Tomorrow's date for all files</li>
+            <li><strong>All other data:</strong> Same hardcoded template</li>
+            <li><strong>Files saved in:</strong> generated_files/ folder</li>
+        </ul>
+        <div id="exampleText">
+            <strong>Example:</strong> 10 files → 10 separate files (each with 1 row)
+        </div>
+    </div>
+
+    <div id="result" class="result"></div>
+</div>
+
+<script>
+    const sameFileModeCheckbox = document.getElementById('sameFileModeCheckbox');
+    const sixMbCheckbox = document.getElementById('sixMbCheckbox');
+    const countInput = document.getElementById('countInput');
+    const modeText = document.getElementById('modeText');
+    const exampleText = document.getElementById('exampleText');
+
+    // When 6MB is checked, automatically check Same file mode
+    sixMbCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            sameFileModeCheckbox.checked = true;
+        }
+        updateExample();
+    });
+
+    // When Same file mode is unchecked, also uncheck 6MB
+    sameFileModeCheckbox.addEventListener('change', function() {
+        if (!this.checked) {
+            sixMbCheckbox.checked = false;
+        }
+        updateExample();
+    });
+
+    countInput.addEventListener('input', updateExample);
+
+    function updateExample() {
+        const fileCount = parseInt(countInput.value) || 10;
+        const sameFileMode = sameFileModeCheckbox.checked;
+        const sixMbMode = sixMbCheckbox.checked;
+
+        if (sixMbMode) {
+            const totalRows = fileCount * 14250;
+            modeText.textContent = 'Same file mode + 6MB: Each file will contain 14,250 rows';
+            exampleText.innerHTML = `<strong>Example:</strong> ${fileCount} files → ${fileCount} separate files (each with 14,250 rows = ${totalRows.toLocaleString()} total rows)`;
+        } else if (sameFileMode) {
+            modeText.textContent = 'Same file mode: Each file will contain multiple rows (custom)';
+            exampleText.innerHTML = `<strong>Example:</strong> ${fileCount} files → ${fileCount} separate files (multiple rows per file)`;
+        } else {
+            modeText.textContent = 'Normal mode: Each file will contain 1 row';
+            exampleText.innerHTML = `<strong>Example:</strong> ${fileCount} files → ${fileCount} separate files (each with 1 row)`;
+        }
+    }
+
+    // Form submission
+    document.getElementById('generateForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const resultDiv = document.getElementById('result');
+        const count = parseInt(countInput.value);
+        const sameFileMode = sameFileModeCheckbox.checked;
+        const sixMbMode = sixMbCheckbox.checked;
+
+        if (!count || count < 1 || count > 1000) {
+            alert('Please enter a valid number of files between 1 and 1000!');
+            return;
+        }
+
+        try {
+            let processingText;
+            let rowsPerFile = 1;
+
+            if (sixMbMode) {
+                rowsPerFile = 14250;
+                processingText = `Generating ${count} files with 14,250 rows each (${(count * 14250).toLocaleString()} total rows)...`;
+            } else if (sameFileMode) {
+                alert('Please check the 6MB checkbox to generate files with multiple rows, or uncheck Same file mode for single row files.');
+                return;
+            } else {
+                processingText = `Generating ${count} files with 1 row each...`;
+            }
+
+            resultDiv.innerHTML = `<p>${processingText}</p>`;
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+
+            // Build API URL with parameters
+            let apiUrl = `/api/csv/generate?count=${count}`;
+            if (sixMbMode) {
+                apiUrl += `&rowsPerFile=${rowsPerFile}`;
+            }
+
+            const response = await fetch(apiUrl, {
+                method: 'POST'
+            });
+
+            const result = await response.json();
+            console.log('API Response:', result);
+
+            if (response.ok && result.success) {
+                const data = result.data;
+
+                resultDiv.innerHTML = `
+                    <h3>Success!</h3>
+                    <p><strong>Message:</strong> ${result.message}</p>
+                    <p><strong>Files Generated:</strong> ${data.totalFilesGenerated}</p>
+                    <p><strong>Output Directory:</strong> ${data.outputDirectory}</p>
+                    <p><strong>Tomorrow's Date Used:</strong> ${data.tomorrowDate}</p>
+                    <p><strong>Position 8 Range:</strong> ${data.startingPosition8Value} to ${data.endingPosition8Value}</p>
+                    ${data.rowsPerFile ? `<p><strong>Rows per File:</strong> ${data.rowsPerFile.toLocaleString()}</p>` : ''}
+                    ${data.totalRows ? `<p><strong>Total Rows Generated:</strong> ${data.totalRows.toLocaleString()}</p>` : ''}
+                    <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                    <p><strong>All files are ready in the ${data.outputDirectory} folder!</strong></p>
+                `;
+                resultDiv.className = 'result';
+            } else {
+                const errorMessage = result.error || result.message || 'Generation failed';
+                throw new Error(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            resultDiv.innerHTML = `<h3>Error!</h3><p>${error.message}</p>`;
+            resultDiv.className = 'result error';
+        }
+    });
+
+    // Initialize example
+    updateExample();
+</script>
+</body>
+</html>
